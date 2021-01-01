@@ -1,7 +1,6 @@
-import SkipList from './index'
+import SkipList from './skiplist'
 var
-    assert = require('assert'),
-    crypto = require('crypto');
+    assert = require('assert')
 
 function makeList(keys, values) {
     var list = new SkipList();
@@ -19,7 +18,7 @@ describe('SkipList', function() {
             list.insert('key', 'value');
             assert.equal(list.length(), 1);
 
-            var result = list.search('key');
+            var result = list.getValue('key');
             assert.equal(result, 'value');
         });
     });
@@ -35,4 +34,5 @@ describe('SkipList', function() {
             }
         });
     });
+
 });

@@ -1,13 +1,11 @@
-type Key = string;
-
-class SkipListNode<E> {
-    public forward : SkipListNode<E>[];
+class SkipListNode<Key, Value> {
+    public forward : SkipListNode<Key, Value>[];
     public width : number[];
     public key : Key;
-    public value : E;
+    public value : Value;
     private nil : boolean;
 
-    constructor (levels : number, key : Key, value : E, nil : boolean = false) {
+    constructor (levels : number, key : Key, value : Value, nil : boolean = false) {
         this.key = key;
         this.value = value;
         this.nil = nil;
@@ -20,11 +18,11 @@ class SkipListNode<E> {
     }
 }
 
-export default class SkipList<E> {
+export default class SkipList<Key, Value> {
     private p : number;
     private maxLevel : number;
-    private head : SkipListNode<E>;
-    private tail : SkipListNode<E>;
+    private head : SkipListNode<Key, Value>;
+    private tail : SkipListNode<Key, Value>;
     private size : number;
     private compareKey : (a : Key, b : Key) => boolean;
     //private level : number;
@@ -34,8 +32,8 @@ export default class SkipList<E> {
         this.p = 0.5;
         this.maxLevel = 10;
         //this.level = 0;
-        this.tail = new SkipListNode<E>(this.maxLevel, null, null, true);
-        this.head = new SkipListNode<E>(this.maxLevel, null, null);
+        this.tail = new SkipListNode<Key, Value>(this.maxLevel, null, null, true);
+        this.head = new SkipListNode<Key, Value>(this.maxLevel, null, null);
         this.compareKey = (a : Key, b : Key) => {
             return a < b;
         }
@@ -57,8 +55,8 @@ export default class SkipList<E> {
         return lvl;
     }
 
-    public insert = (key : Key, value : E) => {
-        let update : SkipListNode<E>[] = new Array(this.maxLevel);
+    public insert = (key : Key, value : Value) => {
+        let update : SkipListNode<Key, Value>[] = new Array(this.maxLevel);
         let skipped : number[] = new Array(this.maxLevel, 0);
         let x = this.head;
         let pos = 0; //pos = pos(x)
@@ -75,7 +73,7 @@ export default class SkipList<E> {
             x.value = value;
         } else {
             const lvl = this.randomLevel();
-            x = new SkipListNode<E>(this.maxLevel, key, value);
+            x = new SkipListNode<Key, Value>(this.maxLevel, key, value);
             for (let i = 0; i < this.maxLevel; i++) {
                 x.forward[i] = update[i].forward[i];
                 x.width[i] = skipped[i] + update[i].width[i] - pos;
@@ -87,7 +85,7 @@ export default class SkipList<E> {
     }
 
     public delete = (key : Key) => {
-        let update : SkipListNode<E>[] = new Array(this.maxLevel);
+        let update : SkipListNode<Key, Value>[] = new Array(this.maxLevel);
         let x = this.head;
         for (let i = this.maxLevel - 1; i >= 0; i--) {
             while (!x.forward[i].isNil() && this.compareKey(x.forward[i].key, key)) {
