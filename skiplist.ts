@@ -55,7 +55,7 @@ export default class SkipList<Key, Value> {
         return lvl;
     }
 
-    public insert = (key : Key, value : Value) => {
+    public insert = (key : Key, value : Value = null) => {
         let update : SkipListNode<Key, Value>[] = new Array(this.maxLevel);
         let skipped : number[] = new Array(this.maxLevel, 0);
         let x = this.head;
@@ -107,13 +107,18 @@ export default class SkipList<Key, Value> {
         }
     }
 
-    public getValue = (key : Key) => {
+    private getNodeBefore = (key : Key) => {
         let x = this.head;
         for (let i = this.maxLevel - 1; i >= 0; i--) {
             while (!x.forward[i].isNil() && this.compareKey(x.forward[i].key, key)) {
                 x = x.forward[i];
             }
         }
+        return x;
+    }
+
+    public getValue = (key : Key) => {
+        let x = this.getNodeBefore(key);
         x = x.forward[0];
         if (x.key === key) {
             return x.value;
@@ -157,5 +162,20 @@ export default class SkipList<Key, Value> {
             }
         }
         return x.value;
+    }
+
+    // Get up to num_results unique ids that might match key
+    public getNextKeys = (key : Key, num_results : number, id : (key : Key) => number) => {
+        let x = this.getNodeBefore(key);
+        x = x.forward[0];
+        const ids = new Set();
+        const results = [];
+        while (!x.isNil() && ids.size < num_results) {
+            if (!ids.has(id(x.key))) {
+                ids.add(id(x.key));
+                results.push(x.key);
+            }
+        }
+        return results;
     }
 }
