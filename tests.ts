@@ -31,9 +31,8 @@ describe('SkipList', function() {
             let v = [];
             let list = makeList(keys, values);
             for (let i = 0; i < list.length(); i++) {
-                v.push(list.valueAtIndex(i));
+                assert.equal(list.valueAtIndex(i), i);
             }
-            assert.equal([0, 1, 2, 3, 4], v);
         });
     });
 });
