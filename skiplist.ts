@@ -27,10 +27,10 @@ export default class SkipList<Key, Value> {
     private compareKey : (a : Key, b : Key) => boolean;
     //private level : number;
 
-    constructor () {
+    constructor (p : number = 0.5, maxLevel : number = 10) {
         this.size = 0;
-        this.p = 0.5;
-        this.maxLevel = 10;
+        this.p = p;
+        this.maxLevel = maxLevel;
         //this.level = 0;
         this.tail = new SkipListNode<Key, Value>(this.maxLevel, null, null, true);
         this.head = new SkipListNode<Key, Value>(this.maxLevel, null, null);
