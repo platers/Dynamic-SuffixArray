@@ -1,0 +1,14 @@
+{
+    "name": "skiplist",
+    "description": "skiplist implementation for typescript",
+    "version": "1.0.0",
+    "author": "platers",
+    "dependencies": {},
+    "devDependencies": {
+        "mocha": "*"
+    },
+    "main": "index.js",
+    "scripts": {
+        "test": "mocha tests.js"
+    }
+}
