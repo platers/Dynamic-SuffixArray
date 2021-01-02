@@ -126,6 +126,21 @@ describe('SuffixArray', function() {
                 }
             }
         });
+
+        it('works with lots of records and delete', async function () {
+            const {sa, records} = await getEnglishSuffixArray();
+            for (let i = 0; i < records.length / 2; i++) {
+                sa.deleteRecord(new Record(i, records[i]));
+                records[i] = '';
+            }
+            for (let record of records) {
+                for (let word of record.split(' ')) {
+                    if (word != '') {
+                        assert.deepEqual(sa.query(word, 100).sort(), querySlow(word, records).sort());
+                    }
+                }
+            }
+        });
     });
 
 });

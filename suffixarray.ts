@@ -43,6 +43,7 @@ export class SuffixArray {
             if (a == null) return true;
             if (!a.next && a.id == null) return true; // end of search pattern
             if (!b.next && b.id == null) return false; // end of search pattern
+            if (!a.next && !b.next) return a.id < b.id; // sort by id for delete
             if (!a.next) return false; // end of key
             if (!b.next) return true;
             if (a.char != b.char) return a.char < b.char;

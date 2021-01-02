@@ -112,6 +112,8 @@ export default class SkipList<Key, Value> {
                 }
             }
             this.size--;
+        } else {
+            console.log('Failed to delete key not in suffix array', key, x.key);
         }
     }
 
