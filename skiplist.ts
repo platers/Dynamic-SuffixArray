@@ -177,7 +177,7 @@ export default class SkipList<Key, Value> {
         let x = this.getNodeBefore(key);
         //console.log(x.key);
         //console.log(this.compareKey(key, x.key));
-        // console.log(this.compareKey(x.key, key));
+        //console.log(this.compareKey(x.key, key));
         x = x.forward[0];
         const ids = new Set();
         const results = [];

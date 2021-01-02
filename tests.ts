@@ -1,7 +1,9 @@
 import SkipList from './skiplist'
 import { SuffixArray, Record } from './suffixarray'
 var
-    assert = require('assert')
+    assert = require('assert'),
+    fs = require('fs'),
+    util = require('util')
 
 function makeList(keys, values) {
     var list = new SkipList();
@@ -38,6 +40,21 @@ describe('SkipList', function() {
 
 });
 
+const readTextFile : () => Promise<string> = async () => {
+    const fileName = 'sampletext.txt';
+    return await util.promisify(fs.readFile)(fileName, 'utf8');
+}
+
+const getEnglishSuffixArray = async () => {
+    const sa = new SuffixArray();
+    const text = await readTextFile();
+    const records = text.split('.');
+    for (let i = 0; i < records.length; i++) {
+        sa.insertRecord(new Record(i, records[i]));
+    }
+    return {sa, records};
+}
+
 describe('SuffixArray', function() {
     describe('#insertRecord()', function() {
         it('adds correct length', function() {
@@ -62,6 +79,16 @@ describe('SuffixArray', function() {
     });
 
     describe('#query()', function() {
+        const querySlow = (query : string, records : string[]) => {
+            const vals = [];
+            for (let i = 0; i < records.length; i++) {
+                if (records[i].includes(query)) {
+                    vals.push(i);
+                }
+            }
+            return vals;
+        };
+
         it('works with 1 record', function() {
             const sa = new SuffixArray();
             const rec = new Record(2, 'hello');
@@ -88,6 +115,16 @@ describe('SuffixArray', function() {
             assert.deepEqual(sa.query('or', 10).sort(), []);
             assert.deepEqual(sa.query('l', 10).sort(), [2, 3]);
             assert.deepEqual(sa.query('are ', 10).sort(), [3]);
+        });
+
+        it('works with lots of records', async function () {
+            const {sa, records} = await getEnglishSuffixArray();
+            for (let record of records) {
+                for (let word of record.split(' ')) {
+                    //console.log(word, sa.query(word, 100).length);
+                    assert.deepEqual(sa.query(word, 100).sort(), querySlow(word, records).sort());
+                }
+            }
         });
     });
 

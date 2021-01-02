@@ -39,8 +39,10 @@ export class SuffixArray {
     private initSkipList = () => {
         this.skiplist = new SkipList<Key, Value>(0.5, 10);
         const compare = (a : Key, b : Key) => {
-            if (!a.next && !a.id) return true; // end of search pattern
-            if (!b.next && !b.id) return false; // end of search pattern
+            if (b == null) return false; //null when b is head
+            if (a == null) return true;
+            if (!a.next && a.id == null) return true; // end of search pattern
+            if (!b.next && b.id == null) return false; // end of search pattern
             if (!a.next) return false; // end of key
             if (!b.next) return true;
             if (a.char != b.char) return a.char < b.char;
