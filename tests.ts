@@ -48,7 +48,6 @@ const getEnglishSuffixArray = async (fileName : string) => {
             }
         }
     }
-    console.log('inserted records');
     return {sa, records};
 }
 
@@ -140,9 +139,10 @@ describe('SuffixArray', function() {
         });
     });
 
-    describe('#performance', function() {
-            it('works with lots of records and delete on big.txt', async function () {
+    describe.skip('#performance', function() {
+            it('works with lots of records and delete on big.txt with 1 million chars', async function () {
             const {sa, records} = await getEnglishSuffixArray('big.txt');
+            console.log('inserted records');
             for (let i = 0; i < records.length / 2; i++) {
                 sa.deleteRecord(new Record(i, records[i]));
                 records[i] = '';

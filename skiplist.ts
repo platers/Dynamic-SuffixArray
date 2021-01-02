@@ -57,7 +57,6 @@ export default class SkipList<Key, Value> {
 
     private randomLevel = () => {
         let lvl = 1;
-        //console.log('randomlvl', Math.random(), this.p);
         while (Math.random() < this.p && lvl < this.maxLevel) {
             lvl++;
         }
@@ -65,27 +64,19 @@ export default class SkipList<Key, Value> {
     }
 
     public insert = (key : Key, value : Value = null) => {
-        //console.time('insert');
         let update : SkipListNode<Key, Value>[] = new Array(this.maxLevel);
         let x = this.head;
-        //console.time('forward');
-        let jumps = new Array(this.maxLevel);
         for (let i = this.maxLevel - 1; i >= 0; i--) {
-            jumps[i] = 0;
             while (!x.forward[i].isNil() && this.compareKey(x.forward[i].key, key)) {
                 x = x.forward[i];
-                jumps[i]++;
             }
             update[i] = x;
         }
-        //console.timeEnd('forward');
-        //console.log('jumps', jumps);
         x = x.forward[0];
         if (!x.isNil && this.sameKey(x.key, key)) {
             x.value = value;
         } else {
             const lvl = this.randomLevel();
-            //console.log('new node at lvl', lvl);
             x = new SkipListNode<Key, Value>(this.maxLevel, key, value);
             for (let i = 0; i < lvl; i++) {
                 x.forward[i] = update[i].forward[i];
@@ -93,7 +84,6 @@ export default class SkipList<Key, Value> {
             }
             this.size++;
         }
-        //console.timeEnd('insert');
     }
 
     public delete = (key : Key) => {
@@ -147,9 +137,6 @@ export default class SkipList<Key, Value> {
     // Get up to num_results unique ids that might match key
     public getNextKeys = (key : Key, num_results : number, id : (key : Key) => number) => {
         let x = this.getNodeBefore(key);
-        //console.log(x.key);
-        //console.log(this.compareKey(key, x.key));
-        //console.log(this.compareKey(x.key, key));
         x = x.forward[0];
         const ids = new Set();
         const results = [];
