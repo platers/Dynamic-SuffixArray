@@ -65,7 +65,6 @@ export default class SkipList<Key, Value> {
 
     public insert = (key : Key, value : Value = null) => {
         let update : SkipListNode<Key, Value>[] = new Array(this.maxLevel);
-        let skipped : number[] = new Array(this.maxLevel, 0);
         let x = this.head;
         let pos = 0; //pos = pos(x)
         for (let i = this.maxLevel - 1; i >= 0; i--) {
@@ -74,7 +73,6 @@ export default class SkipList<Key, Value> {
                 x = x.forward[i];
             }
             update[i] = x;
-            skipped[i] = pos;
         }
         x = x.forward[0];
         if (!x.isNil && this.sameKey(x.key, key)) {
@@ -84,9 +82,7 @@ export default class SkipList<Key, Value> {
             x = new SkipListNode<Key, Value>(this.maxLevel, key, value);
             for (let i = 0; i < this.maxLevel; i++) {
                 x.forward[i] = update[i].forward[i];
-                x.width[i] = skipped[i] + update[i].width[i] - pos;
                 update[i].forward[i] = x;
-                update[i].width[i] = pos - skipped[i] + 1;
             }
             this.size++;
         }
@@ -107,7 +103,6 @@ export default class SkipList<Key, Value> {
                 if (update[i].forward[i] != x) {
                     break;
                 } else {
-                    update[i].width[i] += x.width[i] - 1;
                     update[i].forward[i] = x.forward[i];
                 }
             }
@@ -137,41 +132,8 @@ export default class SkipList<Key, Value> {
         }
     }
 
-    public getKeyIndex = (key : Key) => {
-        let x = this.head;
-        let pos = 0;
-        for (let i = this.maxLevel - 1; i >= 0; i--) {
-            while (!x.forward[i].isNil() && this.compareKey(x.forward[i].key, key)) {
-                pos += x.width[i];
-                x = x.forward[i];
-            }
-        }
-        pos += x.width[0];
-        x = x.forward[0];
-        if (!x.isNil() && this.sameKey(x.key, key)) {
-            return pos;
-        } else {
-            return null;
-        }
-    }
-
     public length = () => {
         return this.size;
-    }
-
-    public valueAtIndex = (idx: number) => {
-        if (idx >= this.size) {
-            return null;
-        }
-        let x = this.head;
-        idx++;
-        for (let i = this.maxLevel - 1; i >= 0; i--) {
-            while (idx >= x.width[i]) {
-                idx -= x.width[i];
-                x = x.forward[i];
-            }
-        }
-        return x.value;
     }
 
     // Get up to num_results unique ids that might match key
@@ -183,7 +145,6 @@ export default class SkipList<Key, Value> {
         x = x.forward[0];
         const ids = new Set();
         const results = [];
-        //console.log(x.key);
         while (!x.isNil() && ids.size < num_results) {
             if (!ids.has(id(x.key))) {
                 ids.add(id(x.key));

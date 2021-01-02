@@ -25,19 +25,6 @@ describe('SkipList', function() {
             assert.equal(result, 'value');
         });
     });
-
-    describe('#valueAtIndex()', function() {
-        it('works?', function() {
-            let keys = ['cat', 'dog', 'aardvark', 'wallaby', 'chicken'];
-            let values = [1, 3, 0, 4, 2];
-            let v = [];
-            let list = makeList(keys, values);
-            for (let i = 0; i < list.length(); i++) {
-                assert.equal(list.valueAtIndex(i), i);
-            }
-        });
-    });
-
 });
 
 const readTextFile : () => Promise<string> = async () => {
