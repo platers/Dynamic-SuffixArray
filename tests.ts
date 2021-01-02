@@ -27,18 +27,28 @@ describe('SkipList', function() {
     });
 });
 
-const readTextFile : () => Promise<string> = async () => {
-    const fileName = 'sampletext.txt';
+const readTextFile : (fileName : string) => Promise<string> = async (fileName : string) => {
     return await util.promisify(fs.readFile)(fileName, 'utf8');
 }
 
-const getEnglishSuffixArray = async () => {
+const getEnglishSuffixArray = async (fileName : string) => {
     const sa = new SuffixArray();
-    const text = await readTextFile();
-    const records = text.split('.');
-    for (let i = 0; i < records.length; i++) {
-        sa.insertRecord(new Record(i, records[i]));
+    const text = await readTextFile(fileName);
+    console.log(text.length);
+    const splitText = text.split('.');
+    const records = [];
+    console.log('records', splitText.length);
+    for (let i = 0; i < splitText.length; i++) {
+        sa.insertRecord(new Record(i, splitText[i]));
+        records.push(splitText[i]);
+        if (i % 1000 == 0) {
+            console.log('inserted ', i, ' records. size', sa.length());
+            if (sa.length() > 1e6) {
+                break;
+            }
+        }
     }
+    console.log('inserted records');
     return {sa, records};
 }
 
@@ -65,17 +75,17 @@ describe('SuffixArray', function() {
         });
     });
 
-    describe('#query()', function() {
-        const querySlow = (query : string, records : string[]) => {
-            const vals = [];
-            for (let i = 0; i < records.length; i++) {
-                if (records[i].includes(query)) {
-                    vals.push(i);
-                }
+    const querySlow = (query : string, records : string[]) => {
+        const vals = [];
+        for (let i = 0; i < records.length; i++) {
+            if (records[i].includes(query)) {
+                vals.push(i);
             }
-            return vals;
-        };
+        }
+        return vals;
+    };
 
+    describe('#query()', function() {
         it('works with 1 record', function() {
             const sa = new SuffixArray();
             const rec = new Record(2, 'hello');
@@ -105,7 +115,7 @@ describe('SuffixArray', function() {
         });
 
         it('works with lots of records', async function () {
-            const {sa, records} = await getEnglishSuffixArray();
+            const {sa, records} = await getEnglishSuffixArray('sampletext.txt');
             for (let record of records) {
                 for (let word of record.split(' ')) {
                     //console.log(word, sa.query(word, 100).length);
@@ -115,7 +125,7 @@ describe('SuffixArray', function() {
         });
 
         it('works with lots of records and delete', async function () {
-            const {sa, records} = await getEnglishSuffixArray();
+            const {sa, records} = await getEnglishSuffixArray('sampletext.txt');
             for (let i = 0; i < records.length / 2; i++) {
                 sa.deleteRecord(new Record(i, records[i]));
                 records[i] = '';
@@ -124,6 +134,33 @@ describe('SuffixArray', function() {
                 for (let word of record.split(' ')) {
                     if (word != '') {
                         assert.deepEqual(sa.query(word, 100).sort(), querySlow(word, records).sort());
+                    }
+                }
+            }
+        });
+    });
+
+    describe('#performance', function() {
+            it('works with lots of records and delete on big.txt', async function () {
+            const {sa, records} = await getEnglishSuffixArray('big.txt');
+            for (let i = 0; i < records.length / 2; i++) {
+                sa.deleteRecord(new Record(i, records[i]));
+                records[i] = '';
+            }
+            console.log('deleted records');
+
+            let i = 0;
+            for (let record of records) {
+                if (i > 20000) {
+                    break;
+                }
+                for (let word of record.split(' ')) {
+                    if (word != '') {
+                        sa.query(word, 10);
+                        i++;
+                        if (i % 1000 == 0) {
+                            console.log('query', i);
+                        }
                     }
                 }
             }

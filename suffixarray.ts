@@ -37,7 +37,7 @@ export class SuffixArray {
     }
     
     private initSkipList = () => {
-        this.skiplist = new SkipList<Key, Value>(0.5, 10);
+        this.skiplist = new SkipList<Key, Value>(0.5, 30);
         const compare = (a : Key, b : Key) => {
             if (b == null) return false; //null when b is head
             if (a == null) return true;
@@ -47,6 +47,7 @@ export class SuffixArray {
             if (!a.next) return false; // end of key
             if (!b.next) return true;
             if (a.char != b.char) return a.char < b.char;
+            //return a.id < b.id; // sort by id for delete
             return compare(a.next, b.next);
         }
         this.skiplist.setCompare(compare);

@@ -32,7 +32,7 @@ export default class SkipList<Key, Value> {
         this.size = 0;
         this.p = p;
         this.maxLevel = maxLevel;
-        //this.level = 0;
+        //this.level = 0; //implement this for a little more speed
         this.tail = new SkipListNode<Key, Value>(this.maxLevel, null, null, true);
         this.head = new SkipListNode<Key, Value>(this.maxLevel, null, null);
         this.compareKey = (a : Key, b : Key) => {
@@ -57,6 +57,7 @@ export default class SkipList<Key, Value> {
 
     private randomLevel = () => {
         let lvl = 1;
+        //console.log('randomlvl', Math.random(), this.p);
         while (Math.random() < this.p && lvl < this.maxLevel) {
             lvl++;
         }
@@ -64,28 +65,35 @@ export default class SkipList<Key, Value> {
     }
 
     public insert = (key : Key, value : Value = null) => {
+        //console.time('insert');
         let update : SkipListNode<Key, Value>[] = new Array(this.maxLevel);
         let x = this.head;
-        let pos = 0; //pos = pos(x)
+        //console.time('forward');
+        let jumps = new Array(this.maxLevel);
         for (let i = this.maxLevel - 1; i >= 0; i--) {
+            jumps[i] = 0;
             while (!x.forward[i].isNil() && this.compareKey(x.forward[i].key, key)) {
-                pos += x.width[i];
                 x = x.forward[i];
+                jumps[i]++;
             }
             update[i] = x;
         }
+        //console.timeEnd('forward');
+        //console.log('jumps', jumps);
         x = x.forward[0];
         if (!x.isNil && this.sameKey(x.key, key)) {
             x.value = value;
         } else {
             const lvl = this.randomLevel();
+            //console.log('new node at lvl', lvl);
             x = new SkipListNode<Key, Value>(this.maxLevel, key, value);
-            for (let i = 0; i < this.maxLevel; i++) {
+            for (let i = 0; i < lvl; i++) {
                 x.forward[i] = update[i].forward[i];
                 update[i].forward[i] = x;
             }
             this.size++;
         }
+        //console.timeEnd('insert');
     }
 
     public delete = (key : Key) => {
