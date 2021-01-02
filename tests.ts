@@ -1,4 +1,5 @@
 import SkipList from './skiplist'
+import { SuffixArray, Record } from './suffixarray'
 var
     assert = require('assert')
 
@@ -35,4 +36,28 @@ describe('SkipList', function() {
         });
     });
 
+});
+
+describe('SuffixArray', function() {
+    describe('#insertRecord()', function() {
+        it('adds correct length', function() {
+            const sa = new SuffixArray();
+            const rec = new Record(2, 'hello');
+            sa.insertRecord(rec);
+            assert.equal(sa.length(), rec.text.length + 1);
+            const rec2 = new Record(3, 'jack');
+            sa.insertRecord(rec2);
+            assert.equal(sa.length(), rec2.text.length + rec.text.length + 2);
+        });
+    });
+
+    describe('#deleteRecord()', function() {
+        it('deletes correct length', function() {
+            const sa = new SuffixArray();
+            const rec = new Record(2, 'hello');
+            sa.insertRecord(rec);
+            sa.deleteRecord(rec);
+            assert.equal(sa.length(), 0);
+        });
+    });
 });

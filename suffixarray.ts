@@ -6,10 +6,12 @@ type Id = number;
 class Key {
     public char : Char;
     public id : Id;
+    public col : number;
     public next : Key; //null if end of record
-    constructor (char : Char, id : Id, next : Key) {
+    constructor (char : Char, id : Id, col : number, next : Key) {
         this.char = char;
         this.id = id;
+        this.col = col;
         this.next = next;
     } 
 }
@@ -18,7 +20,7 @@ class Value {
 
 }
 
-class Record {
+export class Record {
     public id : Id;
     public text : string;
     constructor (id : number, text : string) {
@@ -27,7 +29,7 @@ class Record {
     }
 }
 
-class SuffixArray {
+export class SuffixArray {
     private skiplist : SkipList<Key, Value>;
     
     constructor () {
@@ -43,17 +45,20 @@ class SuffixArray {
             return compare(a.next, b.next);
         }
         this.skiplist.setCompare(compare);
+        this.skiplist.setSameKey((a : Key, b : Key) => {
+            return a.id === b.id && a.col === b.col;
+        });
     }
 
     private getEndOfRecordKey = (id : Id) => {
-        return new Key(null, id, null);
+        return new Key(null, id, null, null);
     }
 
     private applyToRecord = (record : Record, f : (key : Key) => void) => {
         let lastKey = this.getEndOfRecordKey(record.id);
         f(lastKey);
         for (let i = record.text.length - 1; i >= 0; i--) {
-            const key = new Key(record.text[i], record.id, lastKey);
+            const key = new Key(record.text[i], record.id, i, lastKey);
             f(key);
             lastKey = key;
         }
@@ -88,5 +93,9 @@ class SuffixArray {
             }
         }
         return results; 
+    }
+
+    public length = () => {
+        return this.skiplist.length();
     }
 }

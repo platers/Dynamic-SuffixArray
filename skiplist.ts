@@ -25,6 +25,7 @@ export default class SkipList<Key, Value> {
     private tail : SkipListNode<Key, Value>;
     private size : number;
     private compareKey : (a : Key, b : Key) => boolean;
+    private sameKey : (a : Key, b : Key) => boolean;
     //private level : number;
 
     constructor (p : number = 0.5, maxLevel : number = 10) {
@@ -37,6 +38,9 @@ export default class SkipList<Key, Value> {
         this.compareKey = (a : Key, b : Key) => {
             return a < b;
         }
+        this.sameKey = (a : Key, b : Key) => {
+            return a === b;
+        }
         for (let i = 0; i < this.maxLevel; i++) {
             this.head.forward[i] = this.tail;
             this.head.width[i] = 1;
@@ -45,6 +49,10 @@ export default class SkipList<Key, Value> {
 
     public setCompare = (lt : ((a : Key, b : Key) => boolean)) => {
         this.compareKey = lt;
+    }
+
+    public setSameKey = (same : ((a : Key, b : Key) => boolean)) => {
+        this.sameKey = same;
     }
 
     private randomLevel = () => {
@@ -69,7 +77,7 @@ export default class SkipList<Key, Value> {
             skipped[i] = pos;
         }
         x = x.forward[0];
-        if (x.key === key) {
+        if (!x.isNil && this.sameKey(x.key, key)) {
             x.value = value;
         } else {
             const lvl = this.randomLevel();
@@ -94,7 +102,7 @@ export default class SkipList<Key, Value> {
             update[i] = x;
         }
         x = x.forward[0];
-        if (x.key === key) {
+        if (!x.isNil() && this.sameKey(x.key, key)) {
             for (let i = 0; i < this.maxLevel; i++) {
                 if (update[i].forward[i] != x) {
                     break;
@@ -120,7 +128,7 @@ export default class SkipList<Key, Value> {
     public getValue = (key : Key) => {
         let x = this.getNodeBefore(key);
         x = x.forward[0];
-        if (x.key === key) {
+        if (this.sameKey(x.key, key)) {
             return x.value;
         } else {
             return null;
@@ -138,7 +146,7 @@ export default class SkipList<Key, Value> {
         }
         pos += x.width[0];
         x = x.forward[0];
-        if (x.key === key) {
+        if (!x.isNil() && this.sameKey(x.key, key)) {
             return pos;
         } else {
             return null;
