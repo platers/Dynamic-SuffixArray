@@ -60,4 +60,35 @@ describe('SuffixArray', function() {
             assert.equal(sa.length(), 0);
         });
     });
+
+    describe('#query()', function() {
+        it('works with 1 record', function() {
+            const sa = new SuffixArray();
+            const rec = new Record(2, 'hello');
+            sa.insertRecord(rec);
+            assert.deepEqual(sa.query('h', 10), [2]);
+            assert.deepEqual(sa.query('hel', 10), [2]);
+            assert.deepEqual(sa.query('ell', 10), [2]);
+            assert.deepEqual(sa.query('o', 10), [2]);
+            assert.deepEqual(sa.query('or', 10), []);
+            assert.deepEqual(sa.query('l', 10), [2]);
+        });
+
+        it('works with 2 records', function() {
+            const sa = new SuffixArray();
+            const rec = new Record(2, 'hello');
+            const rec2 = new Record(3, 'helmets are cool');
+            sa.insertRecord(rec);
+            sa.insertRecord(rec2);
+            assert.deepEqual(sa.query('h', 10).sort(), [2, 3]);
+            assert.deepEqual(sa.query('hel', 10).sort(), [2, 3]);
+            assert.deepEqual(sa.query('ell', 10).sort(), [2]);
+            assert.deepEqual(sa.query('o', 10).sort(), [2, 3]);
+            assert.equal(sa.query('o', 1).length, 1);
+            assert.deepEqual(sa.query('or', 10).sort(), []);
+            assert.deepEqual(sa.query('l', 10).sort(), [2, 3]);
+            assert.deepEqual(sa.query('are ', 10).sort(), [3]);
+        });
+    });
+
 });

@@ -175,14 +175,19 @@ export default class SkipList<Key, Value> {
     // Get up to num_results unique ids that might match key
     public getNextKeys = (key : Key, num_results : number, id : (key : Key) => number) => {
         let x = this.getNodeBefore(key);
+        //console.log(x.key);
+        //console.log(this.compareKey(key, x.key));
+        // console.log(this.compareKey(x.key, key));
         x = x.forward[0];
         const ids = new Set();
         const results = [];
+        //console.log(x.key);
         while (!x.isNil() && ids.size < num_results) {
             if (!ids.has(id(x.key))) {
                 ids.add(id(x.key));
                 results.push(x.key);
             }
+            x = x.forward[0];
         }
         return results;
     }

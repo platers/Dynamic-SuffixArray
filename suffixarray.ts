@@ -39,7 +39,9 @@ export class SuffixArray {
     private initSkipList = () => {
         this.skiplist = new SkipList<Key, Value>(0.5, 10);
         const compare = (a : Key, b : Key) => {
-            if (!a.next) return false;
+            if (!a.next && !a.id) return true; // end of search pattern
+            if (!b.next && !b.id) return false; // end of search pattern
+            if (!a.next) return false; // end of key
             if (!b.next) return true;
             if (a.char != b.char) return a.char < b.char;
             return compare(a.next, b.next);
@@ -83,6 +85,7 @@ export class SuffixArray {
     public query = (pattern : string, num_results : number) => {
         const record = new Record(null, pattern);
         const patternKey = this.applyToRecord(record, (key : Key) => {});
+        // console.log(patternKey);
         const keys = this.skiplist.getNextKeys(patternKey, num_results, (key : Key) => { return key.id });
         const results = [];
         for (const key of keys) {
