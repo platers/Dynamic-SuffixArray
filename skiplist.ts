@@ -40,11 +40,11 @@ export class SkipListNode {
     }
 
     public isNil = () => {
-        return this.id === tailNodeId;
+        return this.key.id === tailNodeId;
     }
 
     public isHead = () => {
-        return this.id === headNodeId;
+        return this.key.id === headNodeId;
     }
 }
 
@@ -92,9 +92,10 @@ export class SkipList {
     public getNodeFromKey = (key : Key) => {
         let x = this.head;
         for (let i = this.maxLevel - 1; i >= 0; i--) {
-            const next = this.getNode(x.forward[i])!;
+            let next = this.getNode(x.forward[i])!;
             while (!next.isNil() && this.compareKey(next.key, key)) {
-                x = this.getNode(x.forward[i])!;
+                x = next;
+                next = this.getNode(x.forward[i])!;
             }
         }
         x = this.getNode(x.forward[0])!;
@@ -141,9 +142,10 @@ export class SkipList {
         let update : SkipListNode[] = new Array(this.maxLevel);
         let x = this.head;
         for (let i = this.maxLevel - 1; i >= 0; i--) {
-            const next = this.getNode(x.forward[i])!;
+            let next = this.getNode(x.forward[i])!;
             while (!next.isNil() && this.compareKey(next.key, key)) {
-                x = this.getNode(x.forward[i])!;
+                x = next;
+                next = this.getNode(x.forward[i])!;
             }
             update[i] = x;
         }
@@ -166,8 +168,10 @@ export class SkipList {
         let update : SkipListNode[] = new Array(this.maxLevel);
         let x = this.head;
         for (let i = this.maxLevel - 1; i >= 0; i--) {
-            while (!this.getNode(x.forward[i])!.isNil() && this.compareKey(this.getNode(x.forward[i])!.key, key)) {
-                x = this.getNode(x.forward[i])!;
+            let next = this.getNode(x.forward[i])!;
+            while (!next.isNil() && this.compareKey(next.key, key)) {
+                x = next;
+                next = this.getNode(x.forward[i])!;
             }
             update[i] = x;
         }
@@ -207,8 +211,10 @@ export class SkipList {
     public getNextKeys = (query : string, num_results : number) => {
         let x = this.head;
         for (let i = this.maxLevel - 1; i >= 0; i--) {
-            while (!this.getNode(x.forward[i])!.isNil() && this.compareKeyString(this.getNode(x.forward[i])!.key, query)) {
-                x = this.getNode(x.forward[i])!;
+            let next = this.getNode(x.forward[i])!;
+            while (!next.isNil() && this.compareKeyString(next.key, query)) {
+                x = next;
+                next = this.getNode(x.forward[i])!;
             }
         }
         x = this.getNode(x.forward[0])!;

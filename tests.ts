@@ -1,28 +1,24 @@
-import SkipList from './skiplist'
+import { Datastore } from './datastore';
+import { Key, SkipList } from './skiplist'
 import { SuffixArray, Record } from './suffixarray'
 var
     assert = require('assert'),
     fs = require('fs'),
     util = require('util')
 
-function makeList(keys, values) {
-    var list = new SkipList();
-    for (let i = 0; i < keys.length; i++) {
-        list.insert(keys[i], values[i]);
-    }
-    return list;
-}
 
 describe('SkipList', function() {
     describe('#insert()', function() {
         it('adds an item to the skiplist', function() {
-            var list = new SkipList();
+            const store = new Datastore();
+            var list = new SkipList(store);
             assert.equal(list.length(), 0);
-            list.insert('key', 'value');
+            const key = new Key('', 0, -1, null);
+            list.insert(key);
             assert.equal(list.length(), 1);
 
-            var result = list.getValue('key');
-            assert.equal(result, 'value');
+            const result = list.getNodeFromKey(key);
+            assert.equal(result?.key.id, 0);
         });
     });
 });
