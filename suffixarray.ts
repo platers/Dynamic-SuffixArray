@@ -1,24 +1,7 @@
-import SkipList from './skiplist'
+import { Datastore } from './datastore';
+import { SkipList, Key } from './skiplist'
 
-type Char = string;
 type Id = number;
-
-class Key {
-    public char : Char;
-    public id : Id;
-    public col : number;
-    public next : Key; //null if end of record
-    constructor (char : Char, id : Id, col : number, next : Key) {
-        this.char = char;
-        this.id = id;
-        this.col = col;
-        this.next = next;
-    } 
-}
-
-class Value {
-
-}
 
 export class Record {
     public id : Id;
@@ -30,69 +13,56 @@ export class Record {
 }
 
 export class SuffixArray {
-    private skiplist : SkipList<Key, Value>;
+    private skiplist : SkipList;
+    private store: Datastore;
     
     constructor () {
-        this.initSkipList();
+        this.store = new Datastore();
+        this.skiplist = new SkipList(this.store, 0.5, 30);
     }
     
-    private initSkipList = () => {
-        this.skiplist = new SkipList<Key, Value>(0.5, 30);
-        const compare = (a : Key, b : Key) => {
-            if (b == null) return false; //null when b is head
-            if (a == null) return true;
-            if (!a.next && a.id == null) return true; // end of search pattern
-            if (!b.next && b.id == null) return false; // end of search pattern
-            if (!a.next && !b.next) return a.id < b.id; // sort by id for delete
-            if (!a.next) return false; // end of key
-            if (!b.next) return true;
-            if (a.char != b.char) return a.char < b.char;
-            return compare(a.next, b.next);
-        }
-        this.skiplist.setCompare(compare);
-        this.skiplist.setSameKey((a : Key, b : Key) => {
-            return a.id === b.id && a.col === b.col;
-        });
-    }
-
     private getEndOfRecordKey = (id : Id) => {
-        return new Key(null, id, null, null);
-    }
-
-    private applyToRecord = (record : Record, f : (key : Key) => void) => {
-        let lastKey = this.getEndOfRecordKey(record.id);
-        f(lastKey);
-        for (let i = record.text.length - 1; i >= 0; i--) {
-            const key = new Key(record.text[i], record.id, i, lastKey);
-            f(key);
-            lastKey = key;
-        }
-        return lastKey;
+        return new Key('', id, -1, null);
     }
 
     public insertRecord = (record : Record) => {
-        this.applyToRecord(record, this.skiplist.insert);
+        let lastNode = this.skiplist.insert(this.getEndOfRecordKey(record.id));
+        for (let i = record.text.length - 1; i >= 0; i--) {
+            const key = new Key(record.text[i], record.id, i, lastNode.id);
+            lastNode = this.skiplist.insert(key);
+        }
     }
 
     public deleteRecord = (record : Record) => {
-        this.applyToRecord(record, this.skiplist.delete);
+        const keys = [this.getEndOfRecordKey(record.id)];
+        // keys are in reverse order
+        for (let i = record.text.length - 1; i >= 0; i--) {
+            const node = this.skiplist.getNodeFromKey(keys[keys.length - 1]);
+            if (node == null) {
+                console.log("Could not find record to delete");
+                return;
+            }
+            const key = new Key(record.text[i], record.id, i, node.id);
+            keys.push(key);
+        }
+        // must delete nodes front to back
+        for (let i = keys.length - 1; i >= 0; i--) {
+            this.skiplist.delete(keys[i]);
+        }
     }
 
-    private match = (pattern : Key, key : Key) => {
-        if (!pattern.next) return true;
-        if (!key.next) return false;
-        if (pattern.char != key.char) return false;
-        return this.match(pattern.next, key.next);
+    private match = (pattern : string, key : Key) : boolean => {
+        if (pattern.length == 0) return true;
+        if (key.next == null) return false; // key is end of record
+        if (pattern[0] != key.char) return false;
+        return this.match(pattern.slice(1), this.skiplist.getNode(key.next)!.key);
     }
 
     public query = (pattern : string, num_results : number) => {
-        const record = new Record(null, pattern);
-        const patternKey = this.applyToRecord(record, (key : Key) => {});
-        // console.log(patternKey);
-        const keys = this.skiplist.getNextKeys(patternKey, num_results, (key : Key) => { return key.id });
+        const keys = this.skiplist.getNextKeys(pattern, num_results);
         const results = [];
         for (const key of keys) {
-            if (this.match(patternKey, key)) {
+            if (this.match(pattern, key)) {
                 results.push(key.id);
             } else { // matching suffixes are consecutive
                 break;

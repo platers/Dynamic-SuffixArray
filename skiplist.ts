@@ -1,58 +1,132 @@
-class SkipListNode<Key, Value> {
-    public forward : SkipListNode<Key, Value>[];
-    public width : number[];
-    public key : Key;
-    public value : Value;
-    private nil : boolean;
+import { Datastore } from "./datastore";
 
-    constructor (levels : number, key : Key, value : Value, nil : boolean = false) {
-        this.key = key;
-        this.value = value;
-        this.nil = nil;
-        this.forward = new Array(levels);
-        this.width = new Array(levels);
-    }
+type Char = string;
+type Id = number;
+export type SkipListNodeId = number;
+
+export class Key {
+    public char : Char;
+    public id : Id;
+    public col : number;
+    public next : SkipListNodeId | null; // id of skiplistnode storing the next suffix. null if end of record
+    constructor (char : Char, id : Id, col : number, next : SkipListNodeId | null) {
+        this.char = char;
+        this.id = id;
+        this.col = col;
+        this.next = next;
+    } 
 
     public isNil = () => {
-        return this.nil;
+        return this.id === tailNodeId;
+    }
+
+    public isHead = () => {
+        return this.id === headNodeId;
     }
 }
 
-export default class SkipList<Key, Value> {
+const headNodeId = -1, tailNodeId = -2;
+export class SkipListNode {
+    public forward : SkipListNodeId[];
+    public width : number[];
+    public key : Key;
+    public id : number; //-1 reserved for head, -2 for tail
+
+    constructor (id : number, levels : number, key : Key) {
+        this.key = key;
+        this.forward = new Array(levels);
+        this.width = new Array(levels);
+        this.id = id;
+    }
+
+    public isNil = () => {
+        return this.id === tailNodeId;
+    }
+
+    public isHead = () => {
+        return this.id === headNodeId;
+    }
+}
+
+export class SkipList {
+    private store: Datastore;
     private p : number;
     private maxLevel : number;
-    private head : SkipListNode<Key, Value>;
-    private tail : SkipListNode<Key, Value>;
+    private head : SkipListNode;
+    private tail : SkipListNode;
     private size : number;
-    private compareKey : (a : Key, b : Key) => boolean;
-    private sameKey : (a : Key, b : Key) => boolean;
-    //private level : number;
 
-    constructor (p : number = 0.5, maxLevel : number = 10) {
+    constructor (store : Datastore, p : number = 0.5, maxLevel : number = 10) {
+        this.store = store;
         this.size = 0;
         this.p = p;
         this.maxLevel = maxLevel;
-        //this.level = 0; //implement this for a little more speed
-        this.tail = new SkipListNode<Key, Value>(this.maxLevel, null, null, true);
-        this.head = new SkipListNode<Key, Value>(this.maxLevel, null, null);
-        this.compareKey = (a : Key, b : Key) => {
-            return a < b;
-        }
-        this.sameKey = (a : Key, b : Key) => {
-            return a === b;
-        }
+        this.tail = this.getTailNode();
+        this.head = this.getHeadNode();
         for (let i = 0; i < this.maxLevel; i++) {
-            this.head.forward[i] = this.tail;
-            this.head.width[i] = 1;
+            this.head.forward[i] = this.tail.id;
         }
     }
 
-    public setCompare = (lt : ((a : Key, b : Key) => boolean)) => {
-        this.compareKey = lt;
+    private compareKey = (a : Key, b : Key) : boolean => {
+        // return a < b
+        if (b.isHead() ) return false; //null when b is head
+        if (a.isHead()) return true;
+        if (a.isNil()) return false;
+        if (b.isNil()) return true;
+
+        if (a.next == null && b.next == null) return a.id < b.id; // sort by id for delete
+        if (a.next == null) return false; // end of key 
+        if (b.next == null) return true; // end of key
+
+        if (a.char != b.char) return a.char < b.char;
+        return this.compareKey(this.getNode(a.next)!.key, this.getNode(b.next)!.key);
+    }
+    private sameKey = (a : Key, b : Key) => {
+        return a.id === b.id && a.col === b.col;
+    }
+    public getNode = (id : SkipListNodeId) => {
+        return this.store.getNode(id);
     }
 
-    public setSameKey = (same : ((a : Key, b : Key) => boolean)) => {
-        this.sameKey = same;
+    public getNodeFromKey = (key : Key) => {
+        let x = this.head;
+        for (let i = this.maxLevel - 1; i >= 0; i--) {
+            const next = this.getNode(x.forward[i])!;
+            while (!next.isNil() && this.compareKey(next.key, key)) {
+                x = this.getNode(x.forward[i])!;
+            }
+        }
+        x = this.getNode(x.forward[0])!;
+        if (!x.isNil() && this.sameKey(x.key, key)) {
+            return x;
+        } else {
+            return null;
+        }
+    }
+
+    private newNode = (key : Key) => {
+        const node = new SkipListNode(this.store.newId(), this.maxLevel, key);
+        this.store.setNode(node);
+        return node;
+    }
+
+    private getHeadNode = () => {
+        const result = this.store.getNode(headNodeId);
+        if (result) {
+            return result;
+        } else {
+            return this.newNode(new Key('', headNodeId, -1, null));
+        }
+    }
+
+    private getTailNode = () => {
+        const result = this.store.getNode(tailNodeId);
+        if (result) {
+            return result;
+        } else {
+            return this.newNode(new Key('', tailNodeId, -2, null));
+        }
     }
 
     private randomLevel = () => {
@@ -63,42 +137,44 @@ export default class SkipList<Key, Value> {
         return lvl;
     }
 
-    public insert = (key : Key, value : Value = null) => {
-        let update : SkipListNode<Key, Value>[] = new Array(this.maxLevel);
+    public insert = (key : Key) => {
+        let update : SkipListNode[] = new Array(this.maxLevel);
         let x = this.head;
         for (let i = this.maxLevel - 1; i >= 0; i--) {
-            while (!x.forward[i].isNil() && this.compareKey(x.forward[i].key, key)) {
-                x = x.forward[i];
+            const next = this.getNode(x.forward[i])!;
+            while (!next.isNil() && this.compareKey(next.key, key)) {
+                x = this.getNode(x.forward[i])!;
             }
             update[i] = x;
         }
-        x = x.forward[0];
-        if (!x.isNil && this.sameKey(x.key, key)) {
-            x.value = value;
+        x = this.getNode(x.forward[0])!;
+        if (!x.isNil() && this.sameKey(x.key, key)) {
+            //overwrite existing?
         } else {
             const lvl = this.randomLevel();
-            x = new SkipListNode<Key, Value>(this.maxLevel, key, value);
+            x = this.newNode(key);
             for (let i = 0; i < lvl; i++) {
                 x.forward[i] = update[i].forward[i];
-                update[i].forward[i] = x;
+                update[i].forward[i] = x.id;
             }
             this.size++;
         }
+        return x;
     }
 
     public delete = (key : Key) => {
-        let update : SkipListNode<Key, Value>[] = new Array(this.maxLevel);
+        let update : SkipListNode[] = new Array(this.maxLevel);
         let x = this.head;
         for (let i = this.maxLevel - 1; i >= 0; i--) {
-            while (!x.forward[i].isNil() && this.compareKey(x.forward[i].key, key)) {
-                x = x.forward[i];
+            while (!this.getNode(x.forward[i])!.isNil() && this.compareKey(this.getNode(x.forward[i])!.key, key)) {
+                x = this.getNode(x.forward[i])!;
             }
             update[i] = x;
         }
-        x = x.forward[0];
+        x = this.getNode(x.forward[0])!;
         if (!x.isNil() && this.sameKey(x.key, key)) {
             for (let i = 0; i < this.maxLevel; i++) {
-                if (update[i].forward[i] != x) {
+                if (this.getNode(update[i].forward[i]) != x) {
                     break;
                 } else {
                     update[i].forward[i] = x.forward[i];
@@ -110,42 +186,40 @@ export default class SkipList<Key, Value> {
         }
     }
 
-    private getNodeBefore = (key : Key) => {
-        let x = this.head;
-        for (let i = this.maxLevel - 1; i >= 0; i--) {
-            while (!x.forward[i].isNil() && this.compareKey(x.forward[i].key, key)) {
-                x = x.forward[i];
-            }
-        }
-        return x;
-    }
+    private compareKeyString = (a : Key, b : string) : boolean => {
+        //TODO
+        // return a < b
+        if (b.length == 0) return false; // end of pattern
+        if (a.isHead()) return true;
+        if (a.isNil()) return false;
 
-    public getValue = (key : Key) => {
-        let x = this.getNodeBefore(key);
-        x = x.forward[0];
-        if (this.sameKey(x.key, key)) {
-            return x.value;
-        } else {
-            return null;
-        }
+        if (a.next == null) return false; // end of key 
+
+        if (a.char != b[0]) return a.char < b[0];
+        return this.compareKeyString(this.getNode(a.next)!.key, b.slice(1));
     }
 
     public length = () => {
         return this.size;
     }
 
-    // Get up to num_results unique ids that might match key
-    public getNextKeys = (key : Key, num_results : number, id : (key : Key) => number) => {
-        let x = this.getNodeBefore(key);
-        x = x.forward[0];
+    // Get up to num_results unique ids that might match query
+    public getNextKeys = (query : string, num_results : number) => {
+        let x = this.head;
+        for (let i = this.maxLevel - 1; i >= 0; i--) {
+            while (!this.getNode(x.forward[i])!.isNil() && this.compareKeyString(this.getNode(x.forward[i])!.key, query)) {
+                x = this.getNode(x.forward[i])!;
+            }
+        }
+        x = this.getNode(x.forward[0])!;
         const ids = new Set();
         const results = [];
         while (!x.isNil() && ids.size < num_results) {
-            if (!ids.has(id(x.key))) {
-                ids.add(id(x.key));
+            if (!ids.has(x.key.id)) {
+                ids.add(x.key.id);
                 results.push(x.key);
             }
-            x = x.forward[0];
+            x = this.getNode(x.forward[0])!;
         }
         return results;
     }
