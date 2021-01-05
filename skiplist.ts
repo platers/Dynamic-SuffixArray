@@ -138,7 +138,7 @@ export class SkipList {
         return lvl;
     }
 
-    public insert = (key : Key) => {
+    private lowerBound = (key : Key) => {
         let update : SkipListNode[] = new Array(this.maxLevel);
         let x = this.head;
         for (let i = this.maxLevel - 1; i >= 0; i--) {
@@ -150,6 +150,11 @@ export class SkipList {
             update[i] = x;
         }
         x = this.getNode(x.forward[0])!;
+        return {x, update};
+    }
+
+    public insert = (key : Key) => {
+        let {x, update} = this.lowerBound(key);
         if (!x.isNil() && this.sameKey(x.key, key)) {
             //overwrite existing?
         } else {
@@ -165,17 +170,7 @@ export class SkipList {
     }
 
     public delete = (key : Key) => {
-        let update : SkipListNode[] = new Array(this.maxLevel);
-        let x = this.head;
-        for (let i = this.maxLevel - 1; i >= 0; i--) {
-            let next = this.getNode(x.forward[i])!;
-            while (!next.isNil() && this.compareKey(next.key, key)) {
-                x = next;
-                next = this.getNode(x.forward[i])!;
-            }
-            update[i] = x;
-        }
-        x = this.getNode(x.forward[0])!;
+        let {x, update} = this.lowerBound(key);
         if (!x.isNil() && this.sameKey(x.key, key)) {
             for (let i = 0; i < this.maxLevel; i++) {
                 if (this.getNode(update[i].forward[i]) != x) {
