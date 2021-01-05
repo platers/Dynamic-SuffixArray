@@ -1,8 +1,7 @@
-import { Datastore } from "./datastore";
+import { Datastore } from './datastore';
+import { Char, Id, SkipListNodeId } from './types'
 
-type Char = string;
-type Id = number;
-export type SkipListNodeId = number;
+const headNodeId = -1, tailNodeId = -2;
 
 export class Key {
     public char : Char;
@@ -25,7 +24,6 @@ export class Key {
     }
 }
 
-const headNodeId = -1, tailNodeId = -2;
 export class SkipListNode {
     public forward : SkipListNodeId[];
     public width : number[];

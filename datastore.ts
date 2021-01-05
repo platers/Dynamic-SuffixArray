@@ -1,6 +1,7 @@
 import { SkipList } from "./skiplist";
 
-import { SkipListNode, SkipListNodeId } from './skiplist';
+import { SkipListNode } from './skiplist';
+import { SkipListNodeId } from './types';
 
 export class Datastore {
     private data: { [id: number]: SkipListNode } = {};

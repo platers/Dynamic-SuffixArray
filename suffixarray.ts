@@ -1,7 +1,7 @@
 import { Datastore } from './datastore';
 import { SkipList, Key } from './skiplist'
+import { Id } from './types'
 
-type Id = number;
 
 export class Record {
     public id : Id;
