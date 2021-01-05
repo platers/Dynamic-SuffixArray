@@ -1,5 +1,3 @@
-import { SkipList } from "./skiplist";
-
 import { SkipListNode } from './skiplist';
 import { SkipListNodeId } from './types';
 

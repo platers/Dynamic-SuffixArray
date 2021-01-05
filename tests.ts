@@ -91,6 +91,7 @@ describe('SuffixArray', function() {
             assert.deepEqual(sa.query('o', 10), [2]);
             assert.deepEqual(sa.query('or', 10), []);
             assert.deepEqual(sa.query('l', 10), [2]);
+            assert.deepEqual(sa.query('hello', 10), [2]);
         });
 
         it('works with 2 records', function() {
@@ -107,7 +108,29 @@ describe('SuffixArray', function() {
             assert.deepEqual(sa.query('or', 10).sort(), []);
             assert.deepEqual(sa.query('l', 10).sort(), [2, 3]);
             assert.deepEqual(sa.query('are ', 10).sort(), [3]);
+            assert.deepEqual(sa.query('cool', 10).sort(), [3]);
+            assert.deepEqual(sa.query('ello', 10).sort(), [2]);
         });
+        
+        it('works with repeated inserts/deletes', function() {
+            const sa = new SuffixArray();
+            const a = 'hello';
+            sa.insertRecord(new Record(2, ''));
+            for (let i = 0; i < a.length; i++) {
+                const rec = new Record(2, a.slice(0, i));
+                sa.deleteRecord(rec);
+                const rec2 = new Record(2, a.slice(0, i + 1));
+                sa.insertRecord(rec2);
+            }
+            assert.deepEqual(sa.query('h', 10).sort(), [2]);
+            assert.deepEqual(sa.query('hel', 10).sort(), [2]);
+            assert.deepEqual(sa.query('ell', 10).sort(), [2]);
+            assert.deepEqual(sa.query('o', 10).sort(), [2]);
+            assert.equal(sa.query('o', 1).length, 1);
+            assert.deepEqual(sa.query('ello', 10).sort(), [2]);
+            assert.deepEqual(sa.query('hello', 10).sort(), [2]);
+        });
+
 
         it('works with lots of records', async function () {
             const {sa, records} = await getEnglishSuffixArray('sampletext.txt');
